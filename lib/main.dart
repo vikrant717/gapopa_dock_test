@@ -117,7 +117,6 @@ class _DockState<T extends Object> extends State<Dock<T>>
     );
   }
 
-  /// Builds each draggable item with a zoom effect on tap and draggable behavior.
   Widget _buildDraggableItem(T item, int index) {
     return GestureDetector(
       onTap: () async {
