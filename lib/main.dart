@@ -158,15 +158,6 @@ class _DockState<T extends Object> extends State<Dock<T>>
               _filteredItem.remove(item);
             });
           },
-          onDragCompleted: () {
-            setState(() {
-              if (removedItem != null && removedItemIndex != null) {
-                _filteredItem.insert(removedItemIndex!, removedItem!);
-                removedItem = null;
-                removedItemIndex = null;
-              }
-            });
-          },
           onDraggableCanceled: (_, __) {
             setState(() {
               if (removedItem != null && removedItemIndex != null) {
@@ -178,12 +169,19 @@ class _DockState<T extends Object> extends State<Dock<T>>
             });
           },
           child: DragTarget<T>(
+            onWillAccept: (data) => data != item,
             onAcceptWithDetails: (DragTargetDetails<T> details) {
               setState(() {
-                // final receivedItem = details.data;
-                // final oldIndex = _items.indexOf(receivedItem);
-                // _items.removeAt(oldIndex);
-                // _items.insert(index, receivedItem); // Insert at the new index
+                final receivedItem = details.data;
+                final oldIndex = _filteredItem.indexOf(receivedItem);
+
+                // Remove the item from the old position
+                if (oldIndex != -1) {
+                  _filteredItem.removeAt(oldIndex);
+                }
+
+                // Insert the item at the new position
+                _filteredItem.insert(index, receivedItem);
               });
             },
             builder: (context, acceptedData, rejectedData) {
