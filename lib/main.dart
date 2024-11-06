@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 
-/// Entrypoint of the application.
 void main() {
   runApp(MyApp());
 }
 
-/// [Widget] building the [MaterialApp].
 class MyApp extends StatelessWidget {
   MyApp({super.key});
 
@@ -15,7 +13,7 @@ class MyApp extends StatelessWidget {
       home: Scaffold(
         body: Center(
           child: Dock<Object>(
-            items: [
+            items: const [
               Icons.person,
               Icons.message,
               Icons.call,
@@ -43,7 +41,6 @@ class MyApp extends StatelessWidget {
   }
 }
 
-/// Dock of the reorderable [items].
 class Dock<T extends Object> extends StatefulWidget {
   const Dock({
     super.key,
@@ -51,32 +48,22 @@ class Dock<T extends Object> extends StatefulWidget {
     required this.builder,
   });
 
-  /// Initial [T] items to put in this [Dock].
   final List<T> items;
-
-  /// Builder building the provided [T] item.
   final Widget Function(T) builder;
 
   @override
   State<Dock<T>> createState() => _DockState<T>();
 }
 
-/// State of the [Dock] used to manipulate the [_items].
 class _DockState<T extends Object> extends State<Dock<T>>
     with SingleTickerProviderStateMixin {
-  /// [T] items being manipulated.
   List<T> _items = [];
   List<T> _filteredItem = [];
   T? removedItem;
   int? removedItemIndex;
-
-  /// Index of the item currently being animated.
   int? _animatingIndex;
 
-  /// Animation controller for zoom-in/zoom-out.
   late AnimationController _controller;
-
-  /// Animation for the scale transition (zoom effect).
   late Animation<double> _animation;
 
   @override
@@ -120,17 +107,12 @@ class _DockState<T extends Object> extends State<Dock<T>>
   Widget _buildDraggableItem(T item, int index) {
     return GestureDetector(
       onTap: () async {
-        // Set the animating index to the tapped item
         setState(() {
           _animatingIndex = index;
         });
-
-        await _controller.forward(); // Start animation
-        await Future.delayed(
-            const Duration(milliseconds: 50)); // Delay for a short moment
-        await _controller.reverse(); // Reverse animation
-
-        // Reset animating index
+        await _controller.forward();
+        await Future.delayed(const Duration(milliseconds: 50));
+        await _controller.reverse();
         setState(() {
           _animatingIndex = null;
         });
@@ -143,27 +125,28 @@ class _DockState<T extends Object> extends State<Dock<T>>
           data: item,
           dragAnchorStrategy: pointerDragAnchorStrategy,
           feedback: Material(
-            color: Colors.transparent,
-            child: widget.builder(item), // The icon shown when dragging
+            child: widget.builder(item),
           ),
           childWhenDragging: Opacity(
-            opacity: 1, // Change appearance when dragging
+            opacity: 1, // Reduced opacity for better dragging effect
             child: widget.builder(item),
           ),
           onDragStarted: () {
             setState(() {
               removedItem = item;
               removedItemIndex = index;
-              _filteredItem.remove(item);
+              _filteredItem
+                  .remove(item); // Temporarily remove item to shrink dock
             });
           },
           onDraggableCanceled: (_, __) {
             setState(() {
+              // Reinsert the item if drag is canceled outside
               if (removedItem != null && removedItemIndex != null) {
                 _filteredItem.insert(removedItemIndex!, removedItem!);
                 removedItem = null;
                 removedItemIndex = null;
-                _controller.reverse(); // Expand the dock back
+                _controller.reverse();
               }
             });
           },
@@ -174,17 +157,17 @@ class _DockState<T extends Object> extends State<Dock<T>>
                 final receivedItem = details.data;
                 final oldIndex = _filteredItem.indexOf(receivedItem);
 
-                // Remove the item from the old position
+                // Remove the item from the old position if needed
                 if (oldIndex != -1) {
                   _filteredItem.removeAt(oldIndex);
                 }
 
-                // Insert the item at the new position
+                // Insert the item at the new position or back to its original position
                 _filteredItem.insert(index, receivedItem);
               });
             },
             builder: (context, acceptedData, rejectedData) {
-              return widget.builder(item); // Build the icon in its place
+              return widget.builder(item);
             },
           ),
         ),
